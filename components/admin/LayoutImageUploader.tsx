@@ -9,8 +9,11 @@ import {
 } from "@/lib/supabase/client";
 import {
   createStorageObjectName,
+  projectImageAccept,
+  projectImageMimeTypes,
   projectImagesBucket,
   storagePathFromPublicUrl,
+  unsupportedProjectImageMessage,
 } from "@/lib/storage";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { adminButton } from "@/lib/admin-ui";
@@ -38,8 +41,8 @@ export function LayoutImageUploader({
       return;
     }
 
-    if (!file.type.startsWith("image/")) {
-      setMessage("Please choose an image file.");
+    if (!projectImageMimeTypes.includes(file.type)) {
+      setMessage(unsupportedProjectImageMessage);
       return;
     }
 
@@ -136,7 +139,7 @@ export function LayoutImageUploader({
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept={projectImageAccept}
         className="rounded-lg sr-only"
         onChange={(event) => uploadFile(event.target.files?.[0])}
       />

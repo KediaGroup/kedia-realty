@@ -419,6 +419,18 @@ function imagePayloads(projectId: string, input: ProjectFormInput) {
   }));
 }
 
+function projectWriteErrorMessage(error: { code?: string; message: string }) {
+  if (error.code === "23505") {
+    return "A project with this title already exists. Choose a different title.";
+  }
+
+  if (error.code === "42501") {
+    return "Your admin account does not have permission to edit projects.";
+  }
+
+  return error.message;
+}
+
 export async function createProject(input: ProjectFormInput) {
   await requireEditor();
   const supabase = await createSupabaseServerClient();
@@ -430,7 +442,7 @@ export async function createProject(input: ProjectFormInput) {
     .single();
 
   if (error) {
-    throw new Error(error.message);
+    throw new Error(projectWriteErrorMessage(error));
   }
 
   const layouts = input.layouts ?? [];
@@ -454,7 +466,10 @@ export async function createProject(input: ProjectFormInput) {
   const relatedWriteError = imagesError ?? layoutsError;
 
   if (relatedWriteError) {
-    throw new Error(relatedWriteError.message);
+    // Remove the half-created project so retrying doesn't hit the unique slug.
+    // Images and layouts cascade.
+    await supabase.from("projects").delete().eq("id", data.id);
+    throw new Error(projectWriteErrorMessage(relatedWriteError));
   }
 
   return data.id as string;
@@ -470,7 +485,7 @@ export async function updateProject(id: string, input: ProjectFormInput) {
     .eq("id", id);
 
   if (error) {
-    throw new Error(error.message);
+    throw new Error(projectWriteErrorMessage(error));
   }
 
   const [deleteLayoutsError, deleteImagesError] = await Promise.all([
