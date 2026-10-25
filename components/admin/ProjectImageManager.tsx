@@ -9,9 +9,12 @@ import {
 } from "@/lib/supabase/client";
 import {
   createStorageObjectName,
+  projectImageAccept,
+  projectImageMimeTypes,
   projectImagesBucket,
   storagePathFromPublicUrl,
   uniqueNonEmptyValues,
+  unsupportedProjectImageMessage,
 } from "@/lib/storage";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { adminButton } from "@/lib/admin-ui";
@@ -50,8 +53,9 @@ export function ProjectImageManager({
       const supabase = createSupabaseBrowserClient();
       const projectFolder = slug || "draft-project";
       const imageFiles = Array.from(files).filter((file) =>
-        file.type.startsWith("image/"),
+        projectImageMimeTypes.includes(file.type),
       );
+      const skippedCount = files.length - imageFiles.length;
       const uploadedUrls = await Promise.all(
         imageFiles.map(async (file) => {
           const path = `projects/${projectFolder}/${createStorageObjectName(
@@ -78,9 +82,14 @@ export function ProjectImageManager({
 
       setImages((current) => uniqueNonEmptyValues([...current, ...uploadedUrls]));
       setMessage(
-        uploadedUrls.length
-          ? `${uploadedUrls.length} image${uploadedUrls.length === 1 ? "" : "s"} uploaded.`
-          : "No valid image files were selected.",
+        [
+          uploadedUrls.length
+            ? `${uploadedUrls.length} image${uploadedUrls.length === 1 ? "" : "s"} uploaded.`
+            : null,
+          skippedCount ? unsupportedProjectImageMessage : null,
+        ]
+          .filter(Boolean)
+          .join(" ") || "No images were selected.",
       );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to upload images.");
@@ -153,7 +162,7 @@ export function ProjectImageManager({
         <input
           ref={inputRef}
           type="file"
-          accept="image/*"
+          accept={projectImageAccept}
           multiple
           className="rounded-lg sr-only"
           onChange={(event) => uploadFiles(event.target.files)}

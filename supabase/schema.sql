@@ -27,7 +27,7 @@ $$;
 create table public.admin_profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text not null,
-  role text not null default 'editor',
+  role text not null default 'editor' check (role in ('owner', 'editor', 'viewer')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -241,6 +241,11 @@ on public.projects for update
 to authenticated
 using (public.can_edit_content())
 with check (public.can_edit_content());
+
+create policy "Editors can delete projects"
+on public.projects for delete
+to authenticated
+using (public.can_edit_content());
 
 create policy "Public can read published project images"
 on public.project_images for select

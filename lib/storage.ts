@@ -1,6 +1,18 @@
 export const projectImagesBucket = "project-images";
 export const careerResumesBucket = "career-resumes";
 
+// Mirrors allowed_mime_types on the project-images bucket. HEIC (iPhone/Mac
+// default) is rejected by the bucket and most browsers cannot display it.
+export const projectImageMimeTypes = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+];
+export const projectImageAccept = projectImageMimeTypes.join(",");
+export const unsupportedProjectImageMessage =
+  "Only JPG, PNG, WebP or GIF images can be uploaded. Convert HEIC photos to JPG first.";
+
 export function uniqueNonEmptyValues(values: string[]) {
   return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
 }
